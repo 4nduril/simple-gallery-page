@@ -18,7 +18,7 @@ const GALLERY_CONFIG_PATH = pJoin(
 
 const absoluteOutputDir = pJoin(__dirname, '..', OUTPUT_DIR)
 
-const assertIsFunction = fn => typeof fn === 'function'
+const isFunction = fn => typeof fn === 'function'
 const filenameToPath = basePath => name => pJoin(basePath, name)
 const mapToList = (...fns) => x => fns.map(fn => fn(x))
 
@@ -42,7 +42,7 @@ const writeResizedFiles = ({ info, resize }) => toHeight => async ([
 // easyimage -> (string, string) -> Promise<[[lgInfoRecord], [smInfoRecord]]>
 const convertFilesWith = imgMethodProvider => (inputDir, outputDir) => {
 	const { resize, info } = imgMethodProvider
-	if (!assertIsFunction(resize) || !assertIsFunction(info)) {
+	if (!isFunction(resize) || !isFunction(info)) {
 		throw new Error(
 			'Image method provider not sufficient. We need "resize" and "thumbnail".'
 		)
@@ -121,6 +121,6 @@ const zip = ([listA, listB]) =>
 convertFilesWith(easyimage)(RAW_IMG_DIR, absoluteOutputDir)
 	.then(zip)
 	.then(map(fileInfoToGalleryInput(OUTPUT_DIR)))
-	.then(JSON.stringify)
+	.then(o => JSON.stringify(o, null, 2))
 	.then(fileContent => writeFile(GALLERY_CONFIG_PATH, fileContent))
 	.then(log('Ready'))
