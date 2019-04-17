@@ -1,5 +1,4 @@
 raw-imgs
 node_modules
 .next
-www/static/images
-www/utils/grid-gallery-data.json
+www/static

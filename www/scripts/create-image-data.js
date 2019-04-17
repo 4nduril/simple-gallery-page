@@ -6,6 +6,8 @@ const easyimage = require('easyimage')
 const readdir = promisify(readdirCb)
 const writeFile = promisify(writeFileCb)
 
+// CONFIGURATION
+
 const RAW_IMG_DIR = pJoin(__dirname, '..', 'raw-imgs')
 const OUTPUT_DIR = '/static/images'
 const LG_FILES_DIRNAME = 'large'
@@ -13,82 +15,35 @@ const SM_FILES_DIRNAME = 'thumbnails'
 const GALLERY_CONFIG_PATH = pJoin(
 	__dirname,
 	'..',
-	'/utils/grid-gallery-data.json'
+	'/static/data/grid-gallery-data.json'
 )
-
 const absoluteOutputDir = pJoin(__dirname, '..', OUTPUT_DIR)
 
+// END: CONFIGURATION
+
+// Utility functions
+
+// isFunction :: x -> boolean
 const isFunction = fn => typeof fn === 'function'
+
+// filenameToPath :: string -> string -> string
 const filenameToPath = basePath => name => pJoin(basePath, name)
+
+// mapToList :: [(a -> b)] -> a -> [b]
 const mapToList = (...fns) => x => fns.map(fn => fn(x))
+
+// zip :: [[a], [b]] -> [[a, b]]
+const zip = ([listA, listB]) =>
+	listA.length > listB.length
+		? listA.map((entryA, idx) => [entryA, listB[idx]])
+		: listB.map((entryB, idx) => [listA[idx], entryB])
+
+// Sub-functions
 
 const log = s => () => console.log(s) // eslint-disable-line no-console
 
-const writeResizedFiles = ({ info, resize }) => toHeight => async ([
-	srcPath,
-	dstPath,
-]) => {
-	const { width, height } = await info(srcPath)
-	const widthFactor = width / height
-
-	return resize({
-		src: srcPath,
-		dst: dstPath,
-		height: toHeight,
-		width: toHeight * widthFactor,
-	})
-}
-
-// easyimage -> (string, string) -> Promise<[[lgInfoRecord], [smInfoRecord]]>
-const convertFilesWith = imgMethodProvider => (inputDir, outputDir) => {
-	const { resize, info } = imgMethodProvider
-	if (!isFunction(resize) || !isFunction(info)) {
-		throw new Error(
-			'Image method provider not sufficient. We need "resize" and "thumbnail".'
-		)
-	}
-
-	const filenameToSrcPath = filenameToPath(inputDir)
-	const filenameToLgPath = filenameToPath(pJoin(outputDir, LG_FILES_DIRNAME))
-	const filenameToSmPath = filenameToPath(pJoin(outputDir, SM_FILES_DIRNAME))
-
-	// string -> [string, string]
-	const makeLgPathPair = mapToList(filenameToSrcPath, filenameToLgPath)
-	// string -> [string, string]
-	const makeSmPathPair = mapToList(filenameToSrcPath, filenameToSmPath)
-
-	return readdir(inputDir)
-		.then(list => {
-			const lgPathPairs = list.map(makeLgPathPair)
-			const smPathPairs = list.map(makeSmPathPair)
-			return Promise.all([
-				sequentialMapToPromiseAllWith(
-					writeResizedFiles(imgMethodProvider)(1280)
-				)(lgPathPairs),
-				sequentialMapToPromiseAllWith(
-					writeResizedFiles(imgMethodProvider)(180)
-				)(smPathPairs),
-			])
-		})
-		.catch(e => {
-			console.error(e)
-			return []
-		})
-}
-
-function sequentialMapToPromiseAllWith(fn) {
-	return async function sequentialMapToPromiseAll([head, ...tail]) {
-		if (!head) {
-			return Promise.resolve([])
-		}
-		const headResult = await fn(head)
-		const tailResult = await sequentialMapToPromiseAll(tail)
-		return [headResult, ...tailResult]
-	}
-}
-
 /*
- * Info record
+ * InfoRecord (see: easyimage documentation)
  *
  * {
  *   path: string
@@ -96,8 +51,47 @@ function sequentialMapToPromiseAllWith(fn) {
  *   height: number
  *   name: string
  * }
+ *
  */
 
+// writeResizedFileWith :: easyimage -> number -> Promise<InfoRecord>
+const writeResizedFileWith = ({ info, resize }) => toHeight =>
+	async function writeResizedFile([srcPath, dstPath]) {
+		const { width, height } = await info(srcPath)
+		const widthFactor = width / height
+
+		return resize({
+			src: srcPath,
+			dst: dstPath,
+			height: toHeight,
+			width: toHeight * widthFactor,
+		})
+	}
+
+// sequentialMapToPromiseAllWith :: (a -> Promise<b>) -> [a] -> Promise<[b]>
+const sequentialMapToPromiseAllWith = fn =>
+	async function sequentialMapToPromiseAll([head, ...tail]) {
+		if (!head) {
+			return Promise.resolve([])
+		}
+		const headResult = await fn(head)
+		const tailResult = await sequentialMapToPromiseAll(tail)
+		return [headResult, ...tailResult]
+	}
+
+/*
+ *
+ * GalleryInput (see: react-grid-gallery documentation)
+ *
+ * {
+ *   src: string
+ *   thumbnail: string
+ *   thumbnailWidth: number
+ *   thumbnailHeight: number
+ * }
+ */
+
+// fileInfoToGalleryInput :: string -> [InfoRecord, InfoRecord] -> GalleryInput
 const fileInfoToGalleryInput = outputDir => ([lgInfoRecord, smInfoRecord]) => {
 	const filenameToLgPath = filenameToPath(pJoin(outputDir, LG_FILES_DIRNAME))
 	const filenameToSmPath = filenameToPath(pJoin(outputDir, SM_FILES_DIRNAME))
@@ -110,17 +104,51 @@ const fileInfoToGalleryInput = outputDir => ([lgInfoRecord, smInfoRecord]) => {
 	}
 }
 
-const map = fn => as => as.map(fn)
+// getSourcePathsWith :: (string -> Promise<[string]>) -> string -> Promise<[string]>
+const getSourcePathsWith = readdir => inputDir =>
+	readdir(inputDir).then(list => list.map(filenameToPath(inputDir)))
 
-// [[a], [b]] -> [[a, b]]
-const zip = ([listA, listB]) =>
-	listA.length > listB.length
-		? listA.map((entryA, idx) => [entryA, listB[idx]])
-		: listB.map((entryB, idx) => [listA[idx], entryB])
+// convertFilesWith :: easyimage -> string -> [string] -> Promise<[[InfoRecord], [InfoRecord]]>
+const convertFilesWith = imgMethodProvider => outputDir => inputSrcList => {
+	// Check imgMethods
+	const { resize, info } = imgMethodProvider
+	if (!isFunction(resize) || !isFunction(info)) {
+		throw new Error(
+			'Image method provider not sufficient. We need "resize" and "thumbnail".'
+		)
+	}
 
-convertFilesWith(easyimage)(RAW_IMG_DIR, absoluteOutputDir)
-	.then(zip)
-	.then(map(fileInfoToGalleryInput(OUTPUT_DIR)))
-	.then(o => JSON.stringify(o, null, 2))
-	.then(fileContent => writeFile(GALLERY_CONFIG_PATH, fileContent))
+	// Create mappers
+	const filenameToLgPath = filenameToPath(pJoin(outputDir, LG_FILES_DIRNAME))
+	const filenameToSmPath = filenameToPath(pJoin(outputDir, SM_FILES_DIRNAME))
+
+	// makeLgPathPair :: string -> [string, string]
+	const makeLgPathPair = mapToList(x => x, filenameToLgPath)
+	// makeSmPathPair :: string -> [string, string]
+	const makeSmPathPair = mapToList(x => x, filenameToSmPath)
+
+	const lgPathPairs = inputSrcList.map(makeLgPathPair)
+	const smPathPairs = inputSrcList.map(makeSmPathPair)
+	return Promise.all([
+		sequentialMapToPromiseAllWith(
+			writeResizedFileWith(imgMethodProvider)(1280)
+		)(lgPathPairs),
+		sequentialMapToPromiseAllWith(writeResizedFileWith(imgMethodProvider)(180))(
+			smPathPairs
+		),
+	])
+}
+
+const getSourcePaths = getSourcePathsWith(readdir)
+const convertFiles = convertFilesWith(easyimage)
+const makeImageInfoSuitableForGallery = data =>
+	zip(data).map(fileInfoToGalleryInput(OUTPUT_DIR))
+const toJSON = o => JSON.stringify(o, null, 2)
+const writeToDataFile = dataString => writeFile(GALLERY_CONFIG_PATH, dataString)
+
+getSourcePaths(RAW_IMG_DIR)
+	.then(convertFiles(absoluteOutputDir))
+	.then(makeImageInfoSuitableForGallery)
+	.then(toJSON)
+	.then(writeToDataFile)
 	.then(log('Ready'))

@@ -5,28 +5,7 @@ import AppBar from '@material-ui/core/AppBar'
 import Toolbar from '@material-ui/core/Toolbar'
 import { withStyles } from '@material-ui/core/styles'
 import PropTypes from 'prop-types'
-import imgs from '../utils/grid-gallery-data.json'
-
-// const imgs = [
-// {
-// src: '../static/images/IMG_20190317_161356__01.jpg',
-// thumbnail: '../static/images/IMG_20190317_161356__01.jpg',
-// thumbnailWidth: 180,
-// thumbnailHeight: 240,
-// },
-// {
-// src: '../static/images/IMG_20190318_105444.jpg',
-// thumbnail: '../static/images/IMG_20190318_105444.jpg',
-// thumbnailWidth: 180,
-// thumbnailHeight: 240,
-// },
-// {
-// src: '../static/images/IMG_20190318_150649.jpg',
-// thumbnail: '../static/images/IMG_20190318_150649.jpg',
-// thumbnailWidth: 240,
-// thumbnailHeight: 180,
-// },
-// ]
+import imgs from '../static/data/grid-gallery-data.json'
 
 const styles = theme => ({
 	page: {
