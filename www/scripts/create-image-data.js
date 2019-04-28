@@ -3,6 +3,8 @@ const { promisify } = require('util')
 const { readdir: readdirCb, writeFile: writeFileCb } = require('fs')
 const easyimage = require('easyimage')
 
+const sequentialMapToPromiseAllWith = require('../utils/sequentialMapToPromiseAllWith.js')
+
 const readdir = promisify(readdirCb)
 const writeFile = promisify(writeFileCb)
 
@@ -66,17 +68,6 @@ const writeResizedFileWith = ({ info, resize }) => toHeight =>
 			height: toHeight,
 			width: toHeight * widthFactor,
 		})
-	}
-
-// sequentialMapToPromiseAllWith :: (a -> Promise<b>) -> [a] -> Promise<[b]>
-const sequentialMapToPromiseAllWith = fn =>
-	async function sequentialMapToPromiseAll([head, ...tail]) {
-		if (!head) {
-			return Promise.resolve([])
-		}
-		const headResult = await fn(head)
-		const tailResult = await sequentialMapToPromiseAll(tail)
-		return [headResult, ...tailResult]
 	}
 
 /*
@@ -145,6 +136,8 @@ const makeImageInfoSuitableForGallery = data =>
 	zip(data).map(fileInfoToGalleryInput(OUTPUT_DIR))
 const toJSON = o => JSON.stringify(o, null, 2)
 const writeToDataFile = dataString => writeFile(GALLERY_CONFIG_PATH, dataString)
+
+// Actual executing code
 
 getSourcePaths(RAW_IMG_DIR)
 	.then(convertFiles(absoluteOutputDir))
