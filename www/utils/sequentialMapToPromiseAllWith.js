@@ -1,5 +1,5 @@
 // sequentialMapToPromiseAllWith :: (a -> Promise<b>) -> [a] -> Promise<[b]>
-const withAsyncAwait = fn =>
+const withRecursiveAsyncAwait = fn =>
 	async function sequentialMapToPromiseAll([head, ...tail]) {
 		if (!head) {
 			return Promise.resolve([])
@@ -9,7 +9,7 @@ const withAsyncAwait = fn =>
 		return [headResult, ...tailResult]
 	}
 
-const withNestedPromise = fn =>
+const withRecursiveNestedPromise = fn =>
 	function sequentialMapToPromiseAll([head, ...tail]) {
 		if (!head) {
 			return Promise.resolve([])
@@ -20,6 +20,15 @@ const withNestedPromise = fn =>
 				...tailResult,
 			])
 		)
+	}
+
+const withReduce = fn =>
+	function sequentialMapToPromiseAll(list) {
+		return list.reduce(async (previousP, elem) => {
+			const previous = await previousP
+			const applied = await fn(elem)
+			return previous.concat(applied)
+		}, [])
 	}
 
 const withLoop = fn =>
@@ -34,6 +43,7 @@ const withLoop = fn =>
 module.exports = {
 	sequentialMapToPromiseAllWith: withLoop,
 	withLoop,
-	withAsyncAwait,
-	withNestedPromise,
+	withRecursiveAsyncAwait,
+	withRecursiveNestedPromise,
+	withReduce,
 }

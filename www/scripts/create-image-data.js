@@ -1,9 +1,14 @@
-const { join: pJoin } = require('path')
+const { join: pJoin, basename } = require('path')
 const { promisify } = require('util')
 const { readdir: readdirCb, writeFile: writeFileCb } = require('fs')
 const easyimage = require('easyimage')
 
-const sequentialMapToPromiseAllWith = require('../utils/sequentialMapToPromiseAllWith.js')
+const {
+	sequentialMapToPromiseAllWith,
+} = require('../utils/sequentialMapToPromiseAllWith.js')
+const {
+	resizeToHeightAndWriteImageWith,
+} = require('../utils/resizeToHeightAndWriteImage.js')
 
 const readdir = promisify(readdirCb)
 const writeFile = promisify(writeFileCb)
@@ -29,7 +34,7 @@ const absoluteOutputDir = pJoin(__dirname, '..', OUTPUT_DIR)
 const isFunction = fn => typeof fn === 'function'
 
 // filenameToPath :: string -> string -> string
-const filenameToPath = basePath => name => pJoin(basePath, name)
+const filenameToPath = basePath => name => pJoin(basePath, basename(name))
 
 // mapToList :: [(a -> b)] -> a -> [b]
 const mapToList = (...fns) => x => fns.map(fn => fn(x))
@@ -43,32 +48,6 @@ const zip = ([listA, listB]) =>
 // Sub-functions
 
 const log = s => () => console.log(s) // eslint-disable-line no-console
-
-/*
- * InfoRecord (see: easyimage documentation)
- *
- * {
- *   path: string
- *   width: number
- *   height: number
- *   name: string
- * }
- *
- */
-
-// writeResizedFileWith :: easyimage -> number -> Promise<InfoRecord>
-const writeResizedFileWith = ({ info, resize }) => toHeight =>
-	async function writeResizedFile([srcPath, dstPath]) {
-		const { width, height } = await info(srcPath)
-		const widthFactor = width / height
-
-		return resize({
-			src: srcPath,
-			dst: dstPath,
-			height: toHeight,
-			width: toHeight * widthFactor,
-		})
-	}
 
 /*
  *
@@ -122,11 +101,11 @@ const convertFilesWith = imgMethodProvider => outputDir => inputSrcList => {
 	const smPathPairs = inputSrcList.map(makeSmPathPair)
 	return Promise.all([
 		sequentialMapToPromiseAllWith(
-			writeResizedFileWith(imgMethodProvider)(1280)
+			resizeToHeightAndWriteImageWith(imgMethodProvider)(1280)
 		)(lgPathPairs),
-		sequentialMapToPromiseAllWith(writeResizedFileWith(imgMethodProvider)(180))(
-			smPathPairs
-		),
+		sequentialMapToPromiseAllWith(
+			resizeToHeightAndWriteImageWith(imgMethodProvider)(180)
+		)(smPathPairs),
 	])
 }
 

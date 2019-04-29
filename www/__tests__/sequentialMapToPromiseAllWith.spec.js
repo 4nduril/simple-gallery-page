@@ -1,8 +1,9 @@
 const {
 	sequentialMapToPromiseAllWith,
-	withNestedPromise,
+	withRecursiveNestedPromise,
 	withLoop,
-	withAsyncAwait,
+	withRecursiveAsyncAwait,
+	withReduce,
 } = require('../utils/sequentialMapToPromiseAllWith.js')
 
 describe('sequentialMapToPromiseAllWith', () => {
@@ -18,7 +19,7 @@ describe('sequentialMapToPromiseAllWith', () => {
 	it('works with nested "then"', async () => {
 		const fn = x => Promise.resolve(x + 1)
 		const list = [1, 2, 3]
-		const result = await withNestedPromise(fn)(list)
+		const result = await withRecursiveNestedPromise(fn)(list)
 		expect(result).toEqual([2, 3, 4])
 	})
 	it('works as loop', async () => {
@@ -30,7 +31,13 @@ describe('sequentialMapToPromiseAllWith', () => {
 	it('works with async/await', async () => {
 		const fn = x => Promise.resolve(x + 1)
 		const list = [1, 2, 3]
-		const result = await withAsyncAwait(fn)(list)
+		const result = await withRecursiveAsyncAwait(fn)(list)
+		expect(result).toEqual([2, 3, 4])
+	})
+	it('works with reduce', async () => {
+		const fn = x => Promise.resolve(x + 1)
+		const list = [1, 2, 3]
+		const result = await withReduce(fn)(list)
 		expect(result).toEqual([2, 3, 4])
 	})
 })
