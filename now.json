@@ -1,6 +1,5 @@
 {
 	"version": 2,
-	"name": "simple-gallery-page",
 	"builds": [
 		{ "src": "www/package.json", "use": "@now/next" }
 	],
