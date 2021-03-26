@@ -131,4 +131,6 @@ getSourcePaths(RAW_IMG_DIR)
   .then(makeImageInfoSuitableForGallery)
   .then(toJSON)
   .then(writeToDataFile)
-  .then(log("Ready"));
+  .then(log("Ready"))
+  // eslint-disable-next-line
+  .catch(console.error);
