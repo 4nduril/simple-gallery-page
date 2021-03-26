@@ -18,15 +18,15 @@ const writeFile = promisify(writeFileCb);
 // CONFIGURATION
 
 const RAW_IMG_DIR = pJoin(__dirname, "..", "raw-imgs");
-const OUTPUT_DIR = "/static/images";
+const OUTPUT_DIR = "/images";
 const LG_FILES_DIRNAME = "large";
 const SM_FILES_DIRNAME = "thumbnails";
 const GALLERY_CONFIG_PATH = pJoin(
   __dirname,
   "..",
-  "/static/data/grid-gallery-data.json"
+  "/public/data/grid-gallery-data.json"
 );
-const absoluteOutputDir = pJoin(__dirname, "..", OUTPUT_DIR);
+const absoluteOutputDir = pJoin(__dirname, "..", "public/", OUTPUT_DIR);
 
 // END: CONFIGURATION
 

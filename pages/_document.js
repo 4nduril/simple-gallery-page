@@ -1,73 +1,69 @@
-import React from 'react'
-import Document, { Head, Main, NextScript } from 'next/document'
-import flush from 'styled-jsx/server'
-import PropTypes from 'prop-types'
+import React from "react";
+import Document, { Html, Head, Main, NextScript } from "next/document";
+import { ServerStyleSheets } from "@material-ui/core/styles";
+import { theme } from "../utils/theme";
 
-class IcelandGalleryDocument extends Document {
-	render() {
-		const { pageContext } = this.props
-
-		return (
-			<html lang="de" dir="ltr">
-				<Head>
-					<meta charset="utf-8" />
-					<meta
-						name="viewport"
-						content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no"
-					/>
-					<meta
-						name="theme-color"
-						content={
-							pageContext
-								? pageContext.theme.palette.primary.main
-								: null
-						}
-					/>
-					<link
-						rel="stylesheet"
-						href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
-					/>
-				</Head>
-				<body>
-					<Main />
-					<NextScript />
-				</body>
-			</html>
-		)
-	}
+export default class GalleryDocument extends Document {
+  render() {
+    return (
+      <Html lang="de" dir="ltr">
+        <Head>
+          <meta charSet="utf-8" />
+          <meta name="theme-color" content={theme.palette.primary.main} />
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
+          />
+        </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
 }
 
-IcelandGalleryDocument.getInitialProps = ctx => {
-	let pageContext
-	const page = ctx.renderPage(Component => {
-		const WrappedComponent = props => {
-			pageContext = props.pageContext
-			return <Component {...props} />
-		}
-		WrappedComponent.propTypes = {
-			pageContext: PropTypes.object.isRequired,
-		}
-		return WrappedComponent
-	})
+GalleryDocument.getInitialProps = (ctx) => {
+  // Resolution order
+  //
+  // On the server:
+  // 1. app.getInitialProps
+  // 2. page.getInitialProps
+  // 3. document.getInitialProps
+  // 4. app.render
+  // 5. page.render
+  // 6. document.render
+  //
+  // On the server with error:
+  // 1. document.getInitialProps
+  // 2. app.render
+  // 3. page.render
+  // 4. document.render
+  //
+  // On the client
+  // 1. app.getInitialProps
+  // 2. page.getInitialProps
+  // 3. app.render
+  // 4. page.render
 
-	let css
-	if (pageContext) {
-		css = pageContext.sheetsRegistry.toString()
-	}
+  // Render app and page and get the context of the page with collected side effects.
+  const sheets = new ServerStyleSheets();
+  const originalRenderPage = ctx.renderPage;
 
-	return {
-		...page,
-		pageContext,
-		styles: (
-			<>
-				<style
-					id="jss-server-side"
-					dangerouslySetInnerHTML={{ __html: css }}
-				/>
-				{flush() || null}
-			</>
-		),
-	}
-}
+  ctx.renderPage = () =>
+    originalRenderPage({
+      enhanceApp: (App) => (props) => sheets.collect(<App {...props} />),
+    });
 
-export default IcelandGalleryDocument
+  return Document.getInitialProps(ctx).then((initialProps) => {
+    return {
+      ...initialProps,
+      // Styles fragment is rendered after the app and page rendering finish.
+      styles: [
+        ...React.Children.toArray(initialProps.styles),
+        sheets.getStyleElement(),
+      ],
+    };
+  });
+};

@@ -1,40 +1,33 @@
-import React from 'react'
-import App, { Container } from 'next/app'
-import { MuiThemeProvider } from '@material-ui/core/styles'
-import CssBaseline from '@material-ui/core/CssBaseline'
-import JssProvider from 'react-jss/lib/JssProvider'
-import getPageContext from '../utils/getPageContext'
+import React from "react";
+import Head from "next/head";
+import { MuiThemeProvider } from "@material-ui/core/styles";
+import CssBaseline from "@material-ui/core/CssBaseline";
+import { theme } from "../utils/theme";
 
-export default class IcelandGallery extends App {
-	constructor() {
-		super()
-		this.pageContext = getPageContext()
-	}
+export default function Gallery(props) {
+  const { Component, pageProps } = props;
 
-	componentDidMount() {
-		const jssStyles = document.querySelector('#jss-server-side')
-		if (jssStyles && jssStyles.parentNode) {
-			jssStyles.parentNode.removeChild(jssStyles)
-		}
-	}
+  React.useEffect(() => {
+    // Remove the server-side injected CSS.
+    const jssStyles = document.querySelector("#jss-server-side");
+    if (jssStyles && jssStyles.parentElement) {
+      jssStyles.parentElement.removeChild(jssStyles);
+    }
+  }, []);
 
-	render() {
-		const { Component, pageProps } = this.props
-		return (
-			<Container>
-				<JssProvider
-					registry={this.pageContext.sheetsRegistry}
-					generateClassName={this.pageContext.generateClassName}
-				>
-					<MuiThemeProvider
-						theme={this.pageContext.theme}
-						sheetsManager={this.pageContext.sheetsManager}
-					>
-						<CssBaseline />
-						<Component pageContext={this.pageContext} {...pageProps} />
-					</MuiThemeProvider>
-				</JssProvider>
-			</Container>
-		)
-	}
+  return (
+    <>
+      <Head>
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no"
+        />
+      </Head>
+
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        <Component {...pageProps} />
+      </MuiThemeProvider>
+    </>
+  );
 }
