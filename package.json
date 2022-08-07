@@ -7,26 +7,30 @@
     "build": "npm run build:images && next build",
     "start": "next start",
     "test": "jest",
-    "build:images": "node ./scripts/create-image-data.js"
+    "build:images": "ts-node ./scripts/create-image-data.ts"
   },
   "author": "Tobias Barth <npm@tobias-barth.net> (https://tobias-barth.net/)",
   "license": "ISC",
   "dependencies": {
     "@material-ui/core": "^4.11.3",
     "easyimage": "^3.1.1",
-    "next": "^10.0.9",
+    "next": "^12.2.4",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-grid-gallery": "^0.5.4",
-    "react-jss": "^8.6.1"
+    "react-jss": "^8.6.1",
+    "typescript": "^4.7.4"
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^4.1.0",
-    "eslint-plugin-prettier": "^3.0.1",
+    "@types/node": "^16.11.47",
+    "eslint": "^8.21.0",
+    "eslint-config-next": "12.2.4",
+    "eslint-config-prettier": "^4.3.0",
+    "eslint-plugin-prettier": "^3.4.1",
     "eslint-plugin-react": "^7.12.4",
     "jest": "^26.6.3",
-    "prettier": "^1.16.4"
+    "prettier": "^2.7.1",
+    "ts-node": "^10.9.1"
   }
 }

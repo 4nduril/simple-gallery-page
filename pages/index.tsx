@@ -3,11 +3,11 @@ import Gallery from "react-grid-gallery";
 import Typography from "@material-ui/core/Typography";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
-import { withStyles } from "@material-ui/core/styles";
+import { withStyles, Theme } from "@material-ui/core/styles";
 import PropTypes from "prop-types";
 import imgs from "../public/data/grid-gallery-data.json";
 
-const styles = (theme) => ({
+const styles = (theme: Theme) => ({
   page: {
     backgroundColor: theme.palette.background.default,
   },
